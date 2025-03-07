@@ -1,6 +1,8 @@
 import 'package:meta/meta.dart';
 import 'package:dart_openai/src/core/utils/logger.dart';
 
+typedef ExtraHeaders = Map<String, String> Function();
+
 /// {@template headers_builder}
 /// This class is responsible for building the headers for all the requests.
 /// {@endtemplate}
@@ -20,12 +22,21 @@ abstract class HeadersBuilder {
   /// This represents additional hezders to be added in all requests made by the package/
   static Map<String, dynamic> _additionalHeadersToRequests = {};
 
+  /// {@template openai_config_extra_headers}
+  /// This is a function that returns a map of extra headers to be added to the request.
+  /// {@endtemplate}
+  static ExtraHeaders? _extraHeaders;
+
   /// {@macro headers_builder_organization}
   @internal
   static String? get organization => _organization;
 
   /// This is used to check if the organization id is set or not.
   static bool get isOrganizationSet => organization != null;
+
+  /// {@macro openai_config_extra_headers}
+  @internal
+  static ExtraHeaders? get extraHeaders => _extraHeaders;
 
   /// {@macro headers_builder_api_key}
   @internal
@@ -43,6 +54,10 @@ abstract class HeadersBuilder {
     OpenAILogger.logAPIKey(_apiKey);
   }
 
+  static setExtraHeaders(ExtraHeaders? headers) {
+    _extraHeaders = headers;
+  }
+
   /// {@macro headers_builder}
   ///
   /// it will return a [Map<String, String>].
@@ -55,16 +70,17 @@ abstract class HeadersBuilder {
       'Content-Type': 'application/json',
     };
 
-    assert(
+    /*assert(
       apiKey != null,
       """
       You must set the API key before making building any headers for a request.""",
-    );
+    );*/
     headers = {
       ...headers,
       ..._additionalHeadersToRequests,
       if (isOrganizationSet) 'OpenAI-Organization': organization!,
-      "Authorization": "Bearer $apiKey",
+      if (apiKey != null) "Authorization": "Bearer $apiKey",
+      if (extraHeaders != null) ...extraHeaders!(),
     };
 
     return headers;
