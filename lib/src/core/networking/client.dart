@@ -94,7 +94,7 @@ abstract class OpenAINetworkingClient {
     OpenAILogger.logStartRequest(from);
 
     final uri = Uri.parse(from);
-    final headers = HeadersBuilder.build();
+    final headers = await HeadersBuilder.build();
 
     final response = client == null
         ? await http
@@ -139,9 +139,7 @@ abstract class OpenAINetworkingClient {
     required String from,
     required T Function(Map<String, dynamic>) onSuccess,
     http.Client? client,
-  }) {
-    final controller = StreamController<T>();
-
+  }) async* {
     final clientForUse = client ?? _streamingHttpClient();
 
     final uri = Uri.parse(from);
@@ -150,52 +148,46 @@ abstract class OpenAINetworkingClient {
 
     final request = http.Request(httpMethod, uri);
 
-    request.headers.addAll(HeadersBuilder.build());
+    request.headers.addAll(await HeadersBuilder.build());
 
     Future<void> close() {
       return Future.wait([
         Future.delayed(Duration.zero, clientForUse.close),
-        controller.close(),
       ]);
     }
 
-    clientForUse
-        .send(request)
-        // .timeout(OpenAIConfig.requestsTimeOut)
-        .then((streamedResponse) {
-      streamedResponse.stream.listen(
-        (value) {
-          final data = utf8.decode(value);
+    try {
+      final streamedResponse = await clientForUse.send(request);
+      await for (var value in streamedResponse.stream) {
+        final data = utf8.decode(value);
 
-          final dataLines = openAIChatStreamLineSplitter
-              .convert(data)
-              .where((element) => element.isNotEmpty)
-              .toList();
+        final dataLines = openAIChatStreamLineSplitter
+            .convert(data)
+            .where((element) => element.isNotEmpty)
+            .toList();
 
-          for (String line in dataLines) {
-            if (line.startsWith(OpenAIStrings.streamResponseStart)) {
-              final String data = line.substring(6);
-              if (data.startsWith(OpenAIStrings.streamResponseEnd)) {
-                OpenAILogger.streamResponseDone();
+        for (String line in dataLines) {
+          if (line.startsWith(OpenAIStrings.streamResponseStart)) {
+            final String data = line.substring(6);
+            if (data.startsWith(OpenAIStrings.streamResponseEnd)) {
+              OpenAILogger.streamResponseDone();
 
-                return;
-              }
-
-              final decoded = decodeToMap(data);
-              controller.add(onSuccess(decoded));
+              return;
             }
-          }
-        },
-        onDone: () {
-          close();
-        },
-        onError: (err) {
-          controller.addError(err);
-        },
-      );
-    });
 
-    return controller.stream;
+            final decoded = decodeToMap(data);
+            yield onSuccess(decoded);
+          }
+        }
+      }
+    } catch (error, stackTrace) {
+      yield* Stream<T>.error(
+        error,
+        stackTrace,
+      );
+    } finally {
+      close();
+    }
   }
 
   static Future<File> postAndExpectFileResponse({
@@ -210,7 +202,7 @@ abstract class OpenAINetworkingClient {
 
     final uri = Uri.parse(to);
 
-    final headers = HeadersBuilder.build();
+    final headers = await HeadersBuilder.build();
 
     final handledBody = body != null ? jsonEncode(body) : null;
 
@@ -296,7 +288,7 @@ abstract class OpenAINetworkingClient {
 
     final uri = Uri.parse(to);
 
-    final headers = HeadersBuilder.build();
+    final headers = await HeadersBuilder.build();
 
     final handledBody = body != null ? jsonEncode(body) : null;
 
@@ -346,7 +338,7 @@ abstract class OpenAINetworkingClient {
     try {
       final clientForUse = client ?? _streamingHttpClient();
       final uri = Uri.parse(to);
-      final headers = HeadersBuilder.build();
+      final headers = await HeadersBuilder.build();
       final httpMethod = OpenAIStrings.postMethod;
       final request = http.Request(httpMethod, uri);
       request.headers.addAll(headers);
@@ -389,7 +381,9 @@ abstract class OpenAINetworkingClient {
                 Map<String, dynamic> decodedData = {};
                 try {
                   decodedData = decodeToMap(respondData);
-                } catch (error) {/** ignore, data has not been received */}
+                } catch (error) {
+                  /** ignore, data has not been received */
+                }
 
                 if (doesErrorExists(decodedData)) {
                   final error = decodedData[OpenAIStrings.errorFieldKey]
@@ -436,7 +430,7 @@ abstract class OpenAINetworkingClient {
 
     final uri = Uri.parse(to);
 
-    final headers = HeadersBuilder.build();
+    final headers = await HeadersBuilder.build();
 
     final httpMethod = OpenAIStrings.postMethod;
 
@@ -501,7 +495,7 @@ abstract class OpenAINetworkingClient {
 
     final request = http.MultipartRequest(httpMethod, Uri.parse(to));
 
-    request.headers.addAll(HeadersBuilder.build());
+    request.headers.addAll(await HeadersBuilder.build());
 
     final imageFile = await http.MultipartFile.fromPath("image", image.path);
 
@@ -550,7 +544,7 @@ abstract class OpenAINetworkingClient {
     OpenAILogger.logStartRequest(to);
 
     final uri = Uri.parse(to);
-    final headers = HeadersBuilder.build();
+    final headers = await HeadersBuilder.build();
 
     final httpMethod = OpenAIStrings.postMethod;
     final request = http.MultipartRequest(httpMethod, uri);
@@ -606,7 +600,7 @@ abstract class OpenAINetworkingClient {
   }) async {
     OpenAILogger.logStartRequest(from);
 
-    final headers = HeadersBuilder.build();
+    final headers = await HeadersBuilder.build();
     final uri = Uri.parse(from);
 
     final response = client == null

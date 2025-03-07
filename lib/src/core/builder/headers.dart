@@ -1,7 +1,7 @@
 import 'package:meta/meta.dart';
 import 'package:dart_openai/src/core/utils/logger.dart';
 
-typedef ExtraHeaders = Map<String, String> Function();
+typedef ExtraHeaders = Future<Map<String, String>> Function();
 
 /// {@template headers_builder}
 /// This class is responsible for building the headers for all the requests.
@@ -65,7 +65,7 @@ abstract class HeadersBuilder {
   /// if the [organization] is set, it will be added to the headers as well.
   /// If in anyhow the API key is not set, it will throw an [AssertionError] while debugging.
   @internal
-  static Map<String, String> build() {
+  static Future<Map<String, String>> build() async {
     Map<String, String> headers = <String, String>{
       'Content-Type': 'application/json',
     };
@@ -80,7 +80,7 @@ abstract class HeadersBuilder {
       ..._additionalHeadersToRequests,
       if (isOrganizationSet) 'OpenAI-Organization': organization!,
       if (apiKey != null) "Authorization": "Bearer $apiKey",
-      if (extraHeaders != null) ...extraHeaders!(),
+      if (extraHeaders != null) ...(await extraHeaders!()),
     };
 
     return headers;
