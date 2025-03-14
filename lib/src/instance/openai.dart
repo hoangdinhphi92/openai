@@ -31,13 +31,13 @@ final class OpenAI extends OpenAIClientBase {
   /// The singleton instance of [OpenAI], make sure to set your OpenAI API key via the [OpenAI.apiKey] setter before accessing the [OpenAI.instance], otherwise it will throw an [Exception].
   /// A [MissingApiKeyException] will be thrown, if the API key is not set.
   static OpenAI get instance {
-    if (_internalApiKey == null) {
+    /*if (_internalApiKey == null) {
       throw MissingApiKeyException("""
       You must set the api key before accessing the instance of this class.
       Example:
       OpenAI.apiKey = "Your API Key";
       """);
-    }
+    }*/
 
     return _instance;
   }
@@ -109,6 +109,18 @@ final class OpenAI extends OpenAIClientBase {
   static set apiKey(String apiKey) {
     HeadersBuilder.apiKey = apiKey;
     _internalApiKey = apiKey;
+  }
+
+
+  /// This is used to set the extra headers that will be added to all the requests made by the package.
+  /// This is useful if you want to add some headers to all the requests, like the user agent for example.
+  /// ```dart
+  /// OpenAI.setExtraHeaders({
+  ///  "User-Agent": "My User Agent"
+  ///  });
+  ///  ```
+  static setExtraHeaders(ExtraHeaders? headers) {
+    HeadersBuilder.setExtraHeaders(headers);
   }
 
   /// This is used to set the base url of the OpenAI API, by default it is set to [OpenAIConfig.baseUrl].

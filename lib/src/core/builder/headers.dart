@@ -54,6 +54,7 @@ abstract class HeadersBuilder {
     OpenAILogger.logAPIKey(_apiKey);
   }
 
+  @internal
   static setExtraHeaders(ExtraHeaders? headers) {
     _extraHeaders = headers;
   }
