@@ -27,7 +27,7 @@ abstract class OpenAIConfig {
   /// {@template openai_config_version}
   /// This is the version of the API.
   /// {@endtemplate}
-  static String get version => OpenAIStrings.version;
+  /// static String get version => OpenAIStrings.version;
 
   /// {@macro openai_config_base_url}
   @internal
