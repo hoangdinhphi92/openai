@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:meta/meta.dart';
 import 'package:dart_openai/src/core/utils/logger.dart';
 
-typedef ExtraHeaders = Future<Map<String, String>> Function();
+typedef ExtraHeaders = FutureOr<Map<String, String>> Function();
 
 /// {@template headers_builder}
 /// This class is responsible for building the headers for all the requests.
